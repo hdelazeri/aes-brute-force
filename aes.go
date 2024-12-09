@@ -11,9 +11,8 @@ func Decrypt(data, key []byte) []byte {
 	}
 
 	decrypted := make([]byte, len(data))
-	size := 16
 
-	for bs, be := 0, size; bs < len(data); bs, be = bs+size, be+size {
+	for bs, be := 0, aes.BlockSize; bs < len(data); bs, be = bs+aes.BlockSize, be+aes.BlockSize {
 		block.Decrypt(decrypted[bs:be], data[bs:be])
 	}
 
@@ -26,10 +25,10 @@ func DecryptBlock(data, key []byte, blockId int) []byte {
 		panic(err.Error())
 	}
 
-	decrypted := make([]byte, 16)
+	decrypted := make([]byte, aes.BlockSize)
 
-	start := 0 + 16*blockId
-	end := start + 16
+	start := 0 + aes.BlockSize*blockId
+	end := start + aes.BlockSize
 
 	block.Decrypt(decrypted, data[start:end])
 

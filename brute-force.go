@@ -6,10 +6,16 @@ const characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567
 
 func GenerateKeys(base string) func(func(string) bool) {
 	return func(yield func(string) bool) {
-		remaining := 16 - len(base)
-		for combination := range Combinations([]rune(characters), remaining) {
-			for suffix := range Permutations(combination) {
-				if !yield(base + string(suffix)) {
+		if len(base) == 16 {
+			yield(base)
+			return
+		}
+
+		for i := 0; i < len(characters); i++ {
+			next := base + string(characters[i])
+
+			for k := range GenerateKeys(next) {
+				if !yield(k) {
 					return
 				}
 			}

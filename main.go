@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"strings"
 	"sync"
@@ -48,7 +49,10 @@ func worker(input []byte, keys <-chan []byte, results chan<- Result, wg *sync.Wa
 
 func statusUpdater(result <-chan Result) {
 	tried := int64(0)
-	found := 0
+	found := make([]struct {
+		Result
+		elapsed time.Duration
+	}, 0)
 	start := time.Now()
 
 	go func() {
@@ -63,17 +67,28 @@ func statusUpdater(result <-chan Result) {
 				rate = float64(tried) / duration
 			}
 
-			fmt.Printf("Tried %10d and found %d valid key (%.2f keys/sec)\r", tried, found, rate)
-			time.Sleep(500 * time.Millisecond)
+			fmt.Printf("Tried %12d and found %2d valid keys (%10.2f keys/sec)\r", tried, len(found), rate)
+			time.Sleep(100 * time.Millisecond)
 		}
 	}()
 
 	for r := range result {
 		tried += 1
 		if r.result {
-			found += 1
-			fmt.Printf("Found key %s\n", string(r.key))
+			found = append(found, struct {
+				Result
+				elapsed time.Duration
+			}{
+				Result:  r,
+				elapsed: time.Since(start),
+			})
 		}
+	}
+
+	fmt.Printf("\nTried %d keys (%.2f keys/sec)\n", tried, float64(tried)/time.Since(start).Seconds())
+
+	for _, r := range found {
+		fmt.Println("Found key:", string(r.key), "in", r.elapsed)
 	}
 }
 
@@ -86,6 +101,8 @@ func main() {
 	if len(keyBase) > 16 {
 		panic("Key base too big")
 	}
+
+	fmt.Printf("Keys to try: %.0f\n", math.Pow(float64(len(characters)), float64(16-len(keyBase))))
 
 	bytes, err := io.ReadAll(os.Stdin)
 	if err != nil {
@@ -102,12 +119,12 @@ func main() {
 
 	var wg sync.WaitGroup
 
-	keys := make(chan []byte, 15)
-	results := make(chan Result, 15)
+	keys := make(chan []byte, 10000)
+	results := make(chan Result, 10000)
 
 	go keyGenerator(keyBase, keys)
 
-	for range 10 {
+	for range 18 {
 		wg.Add(1)
 		go worker(input, keys, results, &wg)
 	}
