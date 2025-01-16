@@ -29,20 +29,11 @@ func worker(input []byte, keys <-chan []byte, results chan<- Result, wg *sync.Wa
 	defer wg.Done()
 
 	for key := range keys {
-		valid := true
-
-		for block := range len(input) / 16 {
-			output := DecryptBlock(input, []byte(key), block)
-
-			if !IsASCIIBytes(output) {
-				valid = false
-				break
-			}
-		}
+		data := DecryptBlocks(input, key, 5)
 
 		results <- Result{
 			key:    key,
-			result: valid,
+			result: IsASCIIBytes(data),
 		}
 	}
 }

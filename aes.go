@@ -4,33 +4,17 @@ import (
 	"crypto/aes"
 )
 
-func Decrypt(data, key []byte) []byte {
+func DecryptBlocks(data, key []byte, length int) []byte {
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		panic(err.Error())
 	}
 
-	decrypted := make([]byte, len(data))
+	decrypted := make([]byte, min(aes.BlockSize*length, len(data)))
 
-	for bs, be := 0, aes.BlockSize; bs < len(data); bs, be = bs+aes.BlockSize, be+aes.BlockSize {
+	for bs, be := 0, aes.BlockSize; bs < len(decrypted); bs, be = bs+aes.BlockSize, be+aes.BlockSize {
 		block.Decrypt(decrypted[bs:be], data[bs:be])
 	}
-
-	return decrypted
-}
-
-func DecryptBlock(data, key []byte, blockId int) []byte {
-	block, err := aes.NewCipher(key)
-	if err != nil {
-		panic(err.Error())
-	}
-
-	decrypted := make([]byte, aes.BlockSize)
-
-	start := 0 + aes.BlockSize*blockId
-	end := start + aes.BlockSize
-
-	block.Decrypt(decrypted, data[start:end])
 
 	return decrypted
 }

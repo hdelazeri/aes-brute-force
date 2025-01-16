@@ -1,6 +1,8 @@
 package main
 
-import "unicode"
+import (
+	"unicode/utf8"
+)
 
 const characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
@@ -24,10 +26,5 @@ func GenerateKeys(base string) func(func(string) bool) {
 }
 
 func IsASCIIBytes(s []byte) bool {
-	for i := 0; i < len(s); i++ {
-		if s[i] > unicode.MaxASCII {
-			return false
-		}
-	}
-	return true
+	return utf8.Valid(s)
 }
